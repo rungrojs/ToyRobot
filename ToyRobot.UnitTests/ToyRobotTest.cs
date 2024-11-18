@@ -72,7 +72,7 @@ namespace ToyRobotProject.UnitTests
         }
 
         [Theory()]
-        [MemberData(nameof(Execute_RotationCommands_ShouldChangeDirectionCorrectlyData), MemberType = typeof(ToyRobotTest))]
+        [MemberData(nameof(Execute_MoveCommand_ShouldUpdatePosition_WhenMoveIsValidData), MemberType = typeof(ToyRobotTest))]
         public void Execute_MoveCommand_ShouldUpdatePosition_WhenMoveIsValid(
             int positionX, int positionY, Direction direction, List<Command> commands, string expectedResult)
         {
@@ -89,7 +89,46 @@ namespace ToyRobotProject.UnitTests
 
             // Act
             toyRobot.Execute(Command.PLACE, location);
+            foreach (var command in commands)
+            {
+                toyRobot.Execute(command);
+            }
 
+            // Assert
+            string? output = null;
+            toyRobot.StatusCallBack = (status) => output = status;
+            toyRobot.Execute(Command.REPORT);
+
+            Assert.Equal(expectedResult, output);
+        }
+
+        [Theory()]
+        [MemberData(nameof(Execute_MoveCommand_ShouldUpdatePosition_WhenMoveIsValidData), MemberType = typeof(ToyRobotTest))]
+        public void Execute_MoveCommand_ShouldUpdatePosition_WhenPlaceIsValidOnceAndMoveIsValid(
+            int positionX, int positionY, Direction direction, List<Command> commands, string expectedResult)
+        {
+            // Arrange
+            var toyRobot = GetToyRobot();
+            var invalidLocation = new PlaceLocation
+            {
+                PositionX = -1,
+                PositionY = 0,
+                Direction = Direction.NORTH
+            };
+
+            var location = new PlaceLocation
+            {
+                PositionX = positionX,
+                PositionY = positionY,
+                Direction = direction
+            };
+
+            // Act
+            toyRobot.Execute(Command.PLACE, invalidLocation);
+            toyRobot.Execute(Command.MOVE);
+            toyRobot.Execute(Command.MOVE);
+
+            toyRobot.Execute(Command.PLACE, location);
             foreach (var command in commands)
             {
                 toyRobot.Execute(command);
@@ -170,7 +209,7 @@ namespace ToyRobotProject.UnitTests
             Assert.Equal($"{_outputTag} Error, Please place robot on map to start", output);
         }
 
-        public static IEnumerable<object[]> Execute_RotationCommands_ShouldChangeDirectionCorrectlyData()
+        public static IEnumerable<object[]> Execute_MoveCommand_ShouldUpdatePosition_WhenMoveIsValidData()
         {
             yield return new object[] { 0, 0, Direction.NORTH,
                 new List<Command>() { Command.MOVE },
